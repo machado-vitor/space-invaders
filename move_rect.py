@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame, sys, pathlib
 pygame.init()
 
 screen = pygame.display.set_mode((640, 480))
@@ -6,6 +6,7 @@ clock  = pygame.time.Clock()
 # Blit (Block Image Transfer)
 # Create an off‑screen surface (50×50) once, then convert it for fast blits
 box = pygame.Surface((50, 50)).convert() # the gold square
+# box = pygame.image.load(pathlib.Path(__file__).with_name("ship.png")).convert()
 box.fill("gold")
 box_rect = box.get_rect(center=(320, 240))
 speed = pygame.Vector2(120, 90)    # px per second
@@ -24,6 +25,6 @@ while True:
         speed *= -1                # simple bounce
 
     screen.fill("black")
-    screen.blit(box, box_rect) # Blit the box on the screen
+    screen.blit(box, box_rect, special_flags=pygame.BLEND_ALPHA_SDL2) # Blit the box on the screen
     # it takes the source surface and the destination rectangle
     pygame.display.flip()
