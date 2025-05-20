@@ -16,21 +16,68 @@ class Player:
         self.bullets = []
         self.bullet_speed = 10
         self.life = 100
+        self.bullet_cooldown = 15  # Frames between shots
+        self.cooldown_timer = 0    # Current cooldown timer
 
     def setup(self, screen):
         self.rect.x = (screen.get_width() - self.rect.width) // 2
         self.rect.y = screen.get_height() - self.rect.height - 10
 
+    def update(self, screen):
+        # Handle player movement with keyboard
+        keys = pygame.key.get_pressed()
+
+        # Move left with left arrow or A key
+        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and self.rect.left > 0:
+            self.rect.x -= self.speed
+
+        # Move right with right arrow or D key
+        if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and self.rect.right < screen.get_width():
+            self.rect.x += self.speed
+
+        # Handle bullet cooldown
+        if self.cooldown_timer > 0:
+            self.cooldown_timer -= 1
+
+        # Fire bullet with spacebar
+        if keys[pygame.K_SPACE] and self.cooldown_timer == 0:
+            self.shoot()
+            self.cooldown_timer = self.bullet_cooldown
+
+        # Update bullets
+        for bullet in self.bullets[:]:
+            bullet.y -= self.bullet_speed
+            if bullet.y < 0:  # Remove bullet if it goes off screen
+                self.bullets.remove(bullet)
+
+    def shoot(self):
+        # Create a bullet (simple rect) at the player's position
+        bullet = pygame.Rect(
+            self.rect.centerx - 2,  # Center the bullet on the ship
+            self.rect.top,          # Start at the top of the ship
+            4,                      # Bullet width
+            10                      # Bullet height
+        )
+        self.bullets.append(bullet)
+
+    def draw(self, screen):
+        # Draw the player
+        screen.blit(self.image, self.rect)
+
+        # Draw bullets
+        for bullet in self.bullets:
+            pygame.draw.rect(screen, (255, 255, 255), bullet)
+
 class InvaderGroup:
     def __init__(self):
         self.invaders = []
-        self.direction = 1  # 1 for right, -1 for left
-        self.speed = 5      # Horizontal movement speed
-        self.drop_speed = 3  # Vertical drop amount
-        self.move_time = 30  # Frames between horizontal movements
-        self.current_move_time = 0
-        self.drop_time = 360  # Frames between periodic drops
-        self.current_drop_time = 0
+        self.movement_direction = 1  # 1 for right, -1 for left
+        self.horizontal_step = 5      # Horizontal movement speed
+        self.vertical_step = 3  # Vertical drop amount
+        self.movement_interval = 30  # Frames between horizontal movements
+        self.movement_timer = 0
+        self.drop_interval = 360  # Frames between periodic drops
+        self.drop_timer = 0
 
     def setup(self, screen, rows, cols):
         screen_width = screen.get_width()
@@ -55,35 +102,27 @@ class InvaderGroup:
                 invader.row = row  # Store row information
                 self.invaders.append(invader)
 
-    def update(self, screen):
+    def update(self):
         # Check if it's time to move
-        self.current_move_time += 1
-        if self.current_move_time >= self.move_time:
-            self.current_move_time = 0
-
-            # Find leftmost and rightmost invaders
-            min_x = float('inf')
-            max_x = float('-inf')
-            for invader in self.invaders:
-                if invader.rect.left < min_x:
-                    min_x = invader.rect.left
-                if invader.rect.right > max_x:
-                    max_x = invader.rect.right
+        self.movement_timer += 1
+        if self.movement_timer >= self.movement_interval:
+            self.movement_timer = 0
 
             # Move invaders horizontally based on row (even/odd)
             for invader in self.invaders:
                 if invader.row % 2 == 0:  # Even rows
-                    invader.rect.x += self.speed * self.direction
+                    invader.rect.x += self.horizontal_step * self.movement_direction
                 else:  # Odd rows
-                    invader.rect.x += self.speed * -self.direction
+                    invader.rect.x += self.horizontal_step * -self.movement_direction
 
         # Periodic drop check
-        self.current_drop_time += 1
-        if self.current_drop_time >= self.drop_time:
-            self.current_drop_time = 0
-            self.direction *= -1
+        self.drop_timer += 1
+        if self.drop_timer >= self.drop_interval:
+            self.drop_timer = 0
+            self.movement_direction *= -1 # change the direction when dropping
             for invader in self.invaders:
-                invader.rect.y += self.drop_speed
+                invader.rect.y += self.vertical_step
+
 
     def draw(self, screen):
         for invader in self.invaders:
@@ -110,11 +149,14 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
+        # Update player (movement and shooting)
+        player.update(screen)
+
         # Update invaders
-        invader_group.update(screen)
+        invader_group.update()
 
         # Draw player and invaders
-        screen.blit(player.image, player.rect)
+        player.draw(screen)
         invader_group.draw(screen)
 
         pygame.display.flip()
@@ -125,3 +167,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
