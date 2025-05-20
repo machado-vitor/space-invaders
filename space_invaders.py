@@ -1,6 +1,7 @@
 import sys
+
 import pygame
-import math
+
 
 class Invader:
     def __init__(self, x, y):
@@ -8,63 +9,57 @@ class Invader:
         self.rect = self.image.get_rect(topleft=(x, y))
 
 class Player:
-    def __init__(self, screen, y):
+    def __init__(self):
         self.image = pygame.image.load("spaceship.png").convert_alpha()
         self.rect = self.image.get_rect()
-        self.rect.x = (screen.get_width() - self.rect.width) // 2
-        self.rect.y = y
         self.speed = 5
         self.bullets = []
         self.bullet_speed = 10
+        self.life = 100
+
+    def setup(self, screen):
+        self.rect.x = (screen.get_width() - self.rect.width) // 2
+        self.rect.y = screen.get_height() - self.rect.height - 10
 
 class InvaderGroup:
-    def __init__(self, screen, rows, cols):
+    def __init__(self):
         self.invaders = []
         self.direction = 1  # 1 for right, -1 for left
         self.speed = 5      # Horizontal movement speed
-        self.drop_speed = 30  # Vertical drop amount
-        self.move_time = 50  # Frames between horizontal movements
+        self.drop_speed = 3  # Vertical drop amount
+        self.move_time = 30  # Frames between horizontal movements
         self.current_move_time = 0
         self.drop_time = 360  # Frames between periodic drops
         self.current_drop_time = 0
 
-        # Create the invaders grid
-        self._create_invaders(screen, rows, cols)
-
-    def _create_invaders(self, screen, rows, cols):
+    def setup(self, screen, rows, cols):
         screen_width = screen.get_width()
         screen_height = screen.get_height()
 
         invader = pygame.image.load("alien1.png").convert_alpha()
-        invader_width = invader.get_width()
         invader_height = invader.get_height()
 
         # Calculate spacing with margins
-        horizontal_margin = screen_width * 0.15
-        top_margin = screen_height * 0.10
-        available_width = screen_width - (2 * horizontal_margin)
-        x_spacing = available_width / cols
-        y_spacing = invader_height * 1.5
+        horizontal_margin = screen_width * 0.15 # 15% of margin on each side
+        top_margin = screen_height * 0.10 # 10% of margin on top
+        available_width = screen_width - (2 * horizontal_margin) # The width left after subtracting the left and right margins.
+        x_spacing = available_width / cols # Divide the available width by the number of columns.
+        y_spacing = invader_height * 1.5 # Prevent overlap by multiplying the height of the invader by 1.5.
 
         # Create invaders
         for row in range(rows):
-            row_invaders = []
             for col in range(cols):
                 x = horizontal_margin + col * x_spacing
                 y = top_margin + row * y_spacing
                 invader = Invader(x, y)
                 invader.row = row  # Store row information
                 self.invaders.append(invader)
-                row_invaders.append(invader)
 
     def update(self, screen):
         # Check if it's time to move
         self.current_move_time += 1
         if self.current_move_time >= self.move_time:
             self.current_move_time = 0
-
-            # Check for edges
-            screen_width = screen.get_width()
 
             # Find leftmost and rightmost invaders
             min_x = float('inf')
@@ -102,8 +97,10 @@ def main():
 
     clock = pygame.time.Clock()
 
-    player = Player(screen, 500)
-    invader_group = InvaderGroup(screen, rows=5, cols=10)
+    player = Player()
+    player.setup(screen)
+    invader_group = InvaderGroup()
+    invader_group.setup(screen, rows=5, cols=10)
 
     running = True
     while running:
