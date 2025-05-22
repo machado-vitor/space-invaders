@@ -81,6 +81,8 @@ class InvaderGroup:
         self.movement_timer = 0
         self.drop_interval = 120  # Frames between periodic drops
         self.drop_timer = 0
+        self.drop_counter = 0  # Counter for the number of drops
+        self.drops_before_direction_change = 5  # Change direction every 5 drops
         self.shooting_probability = 0.0005  # Chance per invader per frame to shoot
         self.bullet_color = (255, 100, 100)
 
@@ -124,7 +126,14 @@ class InvaderGroup:
         self.drop_timer += 1
         if self.drop_timer >= self.drop_interval:
             self.drop_timer = 0
-            self.movement_direction *= -1 # change the direction when dropping
+            self.drop_counter += 1  # Increment drop counter
+
+            # Change direction only every X drops
+            if self.drop_counter >= self.drops_before_direction_change:
+                self.drop_counter = 0  # Reset drop counter
+                self.movement_direction *= -1  # Change direction
+
+            # Always move invaders down on drop
             for invader in self.invaders:
                 invader.rect.y += self.vertical_step
 
